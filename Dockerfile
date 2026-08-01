@@ -22,6 +22,7 @@ ENV NODE_ENV=production
 # supplied at runtime (see docker/entrypoint.sh).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql \
+    openssl \
     redis-server \
     && rm -rf /var/lib/apt/lists/*
 
