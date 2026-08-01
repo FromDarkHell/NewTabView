@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# new-tab-view
 
-## Getting Started
+A self-hostable, customizable new-tab view. This includes simple features like: a clock, a cached news feed, and a Trello list
+widget.
 
-First, run the development server:
+## Features
+
+- **Clock**
+- **News**: Pulls from [thenewsapi.com](https://thenewsapi.com), cached using Redis to stay within their free tier.
+- **Trello**: Connect a Trello account, select a board + select a list, and view the list's cards.
+- Simple multi-user authentication using Postgres.
+
+## Stack
+
+- [Next.js](https://nextjs.org) (App Router) + [Tailwind CSS](https://tailwindcss.com)
+- [Prisma](https://www.prisma.io) + Postgres
+- [Redis](https://redis.io) (via `ioredis`) for caching
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env   # fill in the values below
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable                     | Required for         | Notes                                            |
+|------------------------------|----------------------|--------------------------------------------------|
+| `DATABASE_URL`               | Accounts, Trello     | Postgres connection string                       |
+| `REDIS_URL`                  | News, Trello caching | Redis connection string                          |
+| `NEWS_API_KEY`               | News feed            | [thenewsapi.com](https://thenewsapi.com) API key |
+| `NEXT_PUBLIC_TRELLO_API_KEY` | Trello integration   | Trello app key                                   |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Local Postgres/Redis can be run via `docker-compose.yml` (`docker compose up
+redis postgres`) or point at your own instances.
 
-## Learn More
+## Docker
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The `Dockerfile` builds a standalone image which includes Postgres + Redis internally. Optionally, you can plug it into other Redis/Postgres instances when
+those env vars are provided.
+```bash
+docker compose up --build
+```

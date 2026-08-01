@@ -1,4 +1,21 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_TRELLO_API_KEY: ${NEXT_PUBLIC_TRELLO_API_KEY:-}
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://newtab:newtab@postgres:5432/newtab
+      REDIS_URL: redis://redis:6379
+      NEWS_API_KEY: ${NEWS_API_KEY:-}
+      NEXT_PUBLIC_TRELLO_API_KEY: ${NEXT_PUBLIC_TRELLO_API_KEY:-}
+    depends_on:
+      - redis
+      - postgres
+
   redis:
     image: redis:7-alpine
     ports:
