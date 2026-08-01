@@ -3,6 +3,7 @@
 import { Settings } from "@deemlol/next-icons";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { apiPath } from "@/lib/base-path";
 
 type Board = { id: string; name: string };
 type List = { id: string; name: string };
@@ -42,7 +43,7 @@ function AuthPanel({ onAuthenticated }: { onAuthenticated: (user: User) => void 
     setBusy(true);
     setError(null);
 
-    const res = await fetch(`/api/auth/${mode}`, {
+    const res = await fetch(apiPath(`/api/auth/${mode}`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
@@ -120,7 +121,7 @@ export function SettingsMenu() {
 
   useEffect(() => {
     if (!open) return;
-    fetch("/api/auth/me")
+    fetch(apiPath("/api/auth/me"))
       .then((res) => res.json())
       .then((data: { user: User }) => setUser(data.user))
       .catch(() => {});
@@ -128,7 +129,7 @@ export function SettingsMenu() {
 
   useEffect(() => {
     if (!open || !user) return;
-    fetch("/api/trello/status")
+    fetch(apiPath("/api/trello/status"))
       .then((res) => res.json())
       .then((data: { connected: boolean; selection: Selection }) => {
         setConnected(data.connected);
@@ -142,7 +143,7 @@ export function SettingsMenu() {
 
   useEffect(() => {
     if (!open || !connected) return;
-    fetch("/api/trello/boards")
+    fetch(apiPath("/api/trello/boards"))
       .then((res) => res.json())
       .then((data: { boards?: Board[] }) => setBoards(data.boards ?? []))
       .catch(() => {});
@@ -150,7 +151,7 @@ export function SettingsMenu() {
 
   useEffect(() => {
     if (!selectedBoardId) return;
-    fetch(`/api/trello/lists?boardId=${selectedBoardId}`)
+    fetch(apiPath(`/api/trello/lists?boardId=${selectedBoardId}`))
       .then((res) => res.json())
       .then((data: { lists?: List[] }) => setLists(data.lists ?? []))
       .catch(() => {});
@@ -158,7 +159,7 @@ export function SettingsMenu() {
 
   async function handleLogout() {
     setBusy(true);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch(apiPath("/api/auth/logout"), { method: "POST" });
     setUser(null);
     setConnected(false);
     setSelection(null);
@@ -179,7 +180,7 @@ export function SettingsMenu() {
       success: async () => {
         const token = window.Trello?.token();
         if (token) {
-          await fetch("/api/trello/connect", {
+          await fetch(apiPath("/api/trello/connect"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
@@ -194,7 +195,7 @@ export function SettingsMenu() {
 
   async function handleDisconnect() {
     setBusy(true);
-    await fetch("/api/trello/disconnect", { method: "POST" });
+    await fetch(apiPath("/api/trello/disconnect"), { method: "POST" });
     setConnected(false);
     setSelection(null);
     setBoards([]);
@@ -216,7 +217,7 @@ export function SettingsMenu() {
     };
 
     setSelection(nextSelection);
-    await fetch("/api/trello/selection", {
+    await fetch(apiPath("/api/trello/selection"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nextSelection),
