@@ -3,17 +3,190 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
-  --muted: #71717a;
-  --card-bg: #e3e2e7;
+  color-scheme: light;
+
+  /* Trello design-system tokens (light theme) */
+  --ds-background-accent-lime-subtlest: #efffd6;
+  --ds-background-accent-lime-subtler: #d3f1a7;
+  --ds-background-accent-lime-subtle: #94c748;
+  --ds-background-accent-lime-bolder: #5b7f24;
+  --ds-background-accent-red-subtlest: #ffeceb;
+  --ds-background-accent-red-subtler: #ffd5d2;
+  --ds-background-accent-red-subtle: #f87168;
+  --ds-background-accent-red-bolder: #c9372c;
+  --ds-background-accent-orange-subtlest: #fff5db;
+  --ds-background-accent-orange-subtler: #fce4a6;
+  --ds-background-accent-orange-subtle: #fca700;
+  --ds-background-accent-orange-bolder: #bd5b00;
+  --ds-background-accent-yellow-subtlest: #fef7c8;
+  --ds-background-accent-yellow-subtler: #f5e989;
+  --ds-background-accent-yellow-subtle: #eed12b;
+  --ds-background-accent-yellow-bolder: #946f00;
+  --ds-background-accent-green-subtlest: #dcfff1;
+  --ds-background-accent-green-subtler: #baf3db;
+  --ds-background-accent-green-subtle: #4bce97;
+  --ds-background-accent-green-bolder: #1f845a;
+  --ds-background-accent-teal-subtlest: #e7f9ff;
+  --ds-background-accent-teal-subtler: #c6edfb;
+  --ds-background-accent-teal-subtle: #6cc3e0;
+  --ds-background-accent-teal-bolder: #227d9b;
+  --ds-background-accent-blue-subtlest: #e9f2fe;
+  --ds-background-accent-blue-subtler: #cfe1fd;
+  --ds-background-accent-blue-subtle: #669df1;
+  --ds-background-accent-blue-bolder: #1868db;
+  --ds-background-accent-purple-subtlest: #f8eefe;
+  --ds-background-accent-purple-subtler: #eed7fc;
+  --ds-background-accent-purple-subtle: #c97cf4;
+  --ds-background-accent-purple-bolder: #964ac0;
+  --ds-background-accent-magenta-subtlest: #ffecf8;
+  --ds-background-accent-magenta-subtler: #fdd0ec;
+  --ds-background-accent-magenta-subtle: #e774bb;
+  --ds-background-accent-magenta-bolder: #ae4787;
+  --ds-background-accent-gray-subtlest: #f0f1f2;
+  --ds-background-accent-gray-subtler: #dddee1;
+  --ds-background-accent-gray-subtle: #8c8f97;
+  --ds-background-accent-gray-bolder: #6b6e76;
+  --ds-background-neutral: #0515240f;
+  --ds-background-neutral-subtle: #00000000;
+  --ds-background-danger: #ffeceb;
+  --ds-background-danger-bold: #c9372c;
+  --ds-background-warning: #fff5db;
+  --ds-background-warning-bold: #fbc828;
+  --ds-background-success: #efffd6;
+  --ds-background-success-bold: #5b7f24;
+
+  --ds-border: #0b120e24;
+  --ds-border-bold: #7d818a;
+
+  --ds-text: #292a2e;
+  --ds-text-accent-lime: #4c6b1f;
+  --ds-text-accent-lime-bolder: #37471f;
+  --ds-text-accent-red: #ae2e24;
+  --ds-text-accent-red-bolder: #5d1f1a;
+  --ds-text-accent-orange: #9e4c00;
+  --ds-text-accent-orange-bolder: #693200;
+  --ds-text-accent-yellow: #7f5f01;
+  --ds-text-accent-yellow-bolder: #533f04;
+  --ds-text-accent-green: #216e4e;
+  --ds-text-accent-green-bolder: #164b35;
+  --ds-text-accent-teal: #206a83;
+  --ds-text-accent-teal-bolder: #164555;
+  --ds-text-accent-blue: #1558bc;
+  --ds-text-accent-blue-bolder: #123263;
+  --ds-text-accent-purple: #803fa5;
+  --ds-text-accent-purple-bolder: #48245d;
+  --ds-text-accent-magenta: #943d73;
+  --ds-text-accent-magenta-bolder: #50253f;
+  --ds-text-accent-gray: #505258;
+  --ds-text-accent-gray-bolder: #1e1f21;
+  --ds-text-subtlest: #6b6e76;
+  --ds-text-subtle: #505258;
+
+  --ds-surface: #ffffff;
+  --ds-surface-raised: #ffffff;
+  --ds-surface-overlay: #ffffff;
+  --ds-surface-sunken: #f8f8f8;
+  --ds-shadow-raised: 0px 1px 1px #1e1f2140, 0px 0px 1px #1e1f214f;
+
+  /* Semantic mappings used throughout the app */
+  --background: var(--ds-surface);
+  --foreground: var(--ds-text);
+  --muted: var(--ds-text-subtle);
+  --card-bg: var(--ds-surface-raised);
 }
 
 .dark {
-  --background: #252428;
-  --foreground: #ededed;
-  --muted: #a1a1aa;
-  --card-bg: #312f33;
+  color-scheme: dark;
+
+  /* Trello design-system tokens (dark theme) */
+  --ds-background-accent-lime-subtlest: #28311b;
+  --ds-background-accent-lime-subtler: #37471f;
+  --ds-background-accent-lime-subtle: #4c6b1f;
+  --ds-background-accent-lime-bolder: #94c748;
+  --ds-background-accent-red-subtlest: #42221f;
+  --ds-background-accent-red-subtler: #5d1f1a;
+  --ds-background-accent-red-subtle: #ae2e24;
+  --ds-background-accent-red-bolder: #f87168;
+  --ds-background-accent-orange-subtlest: #3a2c1f;
+  --ds-background-accent-orange-subtler: #693200;
+  --ds-background-accent-orange-subtle: #9e4c00;
+  --ds-background-accent-orange-bolder: #fca700;
+  --ds-background-accent-yellow-subtlest: #332e1b;
+  --ds-background-accent-yellow-subtler: #533f04;
+  --ds-background-accent-yellow-subtle: #7f5f01;
+  --ds-background-accent-yellow-bolder: #ddb30e;
+  --ds-background-accent-green-subtlest: #1c3329;
+  --ds-background-accent-green-subtler: #164b35;
+  --ds-background-accent-green-subtle: #216e4e;
+  --ds-background-accent-green-bolder: #4bce97;
+  --ds-background-accent-teal-subtlest: #1e3137;
+  --ds-background-accent-teal-subtler: #164555;
+  --ds-background-accent-teal-subtle: #206a83;
+  --ds-background-accent-teal-bolder: #6cc3e0;
+  --ds-background-accent-blue-subtlest: #1c2b42;
+  --ds-background-accent-blue-subtler: #123263;
+  --ds-background-accent-blue-subtle: #1558bc;
+  --ds-background-accent-blue-bolder: #669df1;
+  --ds-background-accent-purple-subtlest: #35243f;
+  --ds-background-accent-purple-subtler: #48245d;
+  --ds-background-accent-purple-subtle: #803fa5;
+  --ds-background-accent-purple-bolder: #c97cf4;
+  --ds-background-accent-magenta-subtlest: #3d2232;
+  --ds-background-accent-magenta-subtler: #50253f;
+  --ds-background-accent-magenta-subtle: #943d73;
+  --ds-background-accent-magenta-bolder: #e774bb;
+  --ds-background-accent-gray-subtlest: #303134;
+  --ds-background-accent-gray-subtler: #4b4d51;
+  --ds-background-accent-gray-subtle: #63666b;
+  --ds-background-accent-gray-bolder: #96999e;
+  --ds-background-neutral: #ceced912;
+  --ds-background-neutral-subtle: #00000000;
+  --ds-background-danger: #42221f;
+  --ds-background-danger-bold: #f87168;
+  --ds-background-warning: #3a2c1f;
+  --ds-background-warning-bold: #fbc828;
+  --ds-background-success: #28311b;
+  --ds-background-success-bold: #94c748;
+
+  --ds-border: #e3e4f21f;
+  --ds-border-bold: #7e8188;
+
+  --ds-text: #cecfd2;
+  --ds-text-accent-lime: #b3df72;
+  --ds-text-accent-lime-bolder: #d3f1a7;
+  --ds-text-accent-red: #fd9891;
+  --ds-text-accent-red-bolder: #ffd5d2;
+  --ds-text-accent-orange: #fbc828;
+  --ds-text-accent-orange-bolder: #fce4a6;
+  --ds-text-accent-yellow: #eed12b;
+  --ds-text-accent-yellow-bolder: #f5e989;
+  --ds-text-accent-green: #7ee2b8;
+  --ds-text-accent-green-bolder: #baf3db;
+  --ds-text-accent-teal: #9dd9ee;
+  --ds-text-accent-teal-bolder: #c6edfb;
+  --ds-text-accent-blue: #8fb8f6;
+  --ds-text-accent-blue-bolder: #cfe1fd;
+  --ds-text-accent-purple: #d8a0f7;
+  --ds-text-accent-purple-bolder: #eed7fc;
+  --ds-text-accent-magenta: #f797d2;
+  --ds-text-accent-magenta-bolder: #fdd0ec;
+  --ds-text-accent-gray: #a9abaf;
+  --ds-text-accent-gray-bolder: #e2e3e4;
+  --ds-text-subtlest: #96999e;
+  --ds-text-subtle: #a9abaf;
+
+  --ds-surface: #1f1f21;
+  --ds-surface-raised: #242528;
+  --ds-surface-overlay: #2b2c2f;
+  --ds-surface-sunken: #18191a;
+  --ds-shadow-raised:
+    0px 0px 0px 1px #00000000, 0px 1px 1px #01040480, 0px 0px 1px #01040480;
+
+  /* Semantic mappings used throughout the app */
+  --background: var(--ds-surface);
+  --foreground: var(--ds-text);
+  --muted: var(--ds-text-subtle);
+  --card-bg: var(--ds-surface-raised);
 }
 
 @theme inline {
@@ -34,4 +207,5 @@ body {
   background: var(--card-bg);
   border-radius: 0.5rem;
   padding: 1rem;
+  box-shadow: var(--ds-shadow-raised);
 }

@@ -13,16 +13,21 @@ export function NewsItem({ article }: { article: NewsArticle }) {
         <Image
           src={article.imageUrl}
           alt=""
-          width={80}
-          height={80}
-          className="h-20 w-20 shrink-0 rounded-md object-cover"
+          height={128}
+          width={128}
+          className="w-32 h-32 shrink-0 rounded-md object-cover"
           unoptimized
+          loading="lazy"
         />
       ) : (
         <div className="h-20 w-20 shrink-0 rounded-md bg-foreground/10" />
       )}
-      <div className="min-w-0">
-        <p className="text-sm font-medium leading-snug">{article.title}</p>
+      <div className="flex flex-col justify-between overflow-hidden">
+        <div className="min-w-0 flex flex-col gap-0.5">
+          <p className="text-sm font-medium leading-snug">{article.title}</p>
+          <p className="text-sm">{article.description}</p>
+        </div>
+
         <p className="mt-0.5 text-xs text-muted">{article.source}</p>
       </div>
     </a>

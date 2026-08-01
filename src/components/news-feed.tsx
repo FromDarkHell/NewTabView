@@ -16,12 +16,17 @@ export async function NewsFeed() {
   }
 
   return (
-    <ul className="flex w-full max-w-md flex-col gap-3">
-      {articles.map((article) => (
-        <li key={article.uuid}>
-          <NewsItem article={article} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-3 max-w-1/2">
+      <h2 className="text-sm text-center font-semibold text-muted">
+        News
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {articles.map((article) => (
+          <li key={article.uuid}>
+            <NewsItem article={article} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
