@@ -8,7 +8,11 @@ widget.
 - **Clock**
 - **News**: Pulls from [thenewsapi.com](https://thenewsapi.com), cached using Redis to stay within their free tier.
 - **Trello**: Connect a Trello account, select a board + select a list, and view the list's cards.
-- Simple multi-user authentication using Postgres.
+- **Uptime Kuma**: Point at an [Uptime Kuma](https://github.com/louislam/uptime-kuma) instance's public status page (base URL + slug)
+  and view each monitor's current status, recent heartbeats, and 24h uptime.
+- **ntfy**: Subscribe to any number of [ntfy](https://ntfy.sh) topics, and view their recent notifications in one feed.
+- **Layout**: Signed-in users can arrange the widgets below the clock into columns and stack them within a column
+  (drag and drop, or the arrow buttons) via the layout button in the header.
 
 ## Stack
 
@@ -27,12 +31,12 @@ npm run dev
 
 ### Environment variables
 
-| Variable                     | Required for         | Notes                                            |
-|------------------------------|----------------------|--------------------------------------------------|
-| `DATABASE_URL`               | Accounts, Trello     | Postgres connection string                       |
-| `REDIS_URL`                  | News, Trello caching | Redis connection string                          |
-| `NEWS_API_KEY`               | News feed            | [thenewsapi.com](https://thenewsapi.com) API key |
-| `NEXT_PUBLIC_TRELLO_API_KEY` | Trello integration   | Trello app key                                   |
+| Variable                     | Required for       | Notes                                            |
+|------------------------------|--------------------|--------------------------------------------------|
+| `DATABASE_URL`               | Accounts, Trello   | Postgres connection string                       |
+| `REDIS_URL`                  | Caching            | Redis connection string                          |
+| `NEWS_API_KEY`               | News feed          | [thenewsapi.com](https://thenewsapi.com) API key |
+| `NEXT_PUBLIC_TRELLO_API_KEY` | Trello integration | Trello app key                                   |
 
 Local Postgres/Redis can be run via `docker-compose.yml` (`docker compose up
 redis postgres`) or point at your own instances.

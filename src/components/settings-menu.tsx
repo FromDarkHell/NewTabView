@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "@deemlol/next-icons";
+import { Settings, X } from "@deemlol/next-icons";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import { apiPath } from "@/lib/base-path";
@@ -14,6 +14,10 @@ type Selection = {
   listName: string;
 } | null;
 type User = { id: string; username: string } | null;
+type UptimeKumaConfig = { baseUrl: string; slug: string } | null;
+type NtfySubscription = { id: string; serverUrl: string; topic: string; hasToken: boolean };
+
+const DEFAULT_NTFY_SERVER = "https://ntfy.sh";
 
 declare global {
   interface Window {
@@ -94,6 +98,213 @@ function AuthPanel({ onAuthenticated }: { onAuthenticated: (user: User) => void 
         {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
       </button>
     </form>
+  );
+}
+
+function UptimeKumaPanel() {
+  const [config, setConfig] = useState<UptimeKumaConfig>(null);
+  const [baseUrl, setBaseUrl] = useState("");
+  const [slug, setSlug] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch(apiPath("/api/uptime-kuma/status"))
+      .then((res) => res.json())
+      .then((data: { config: UptimeKumaConfig }) => setConfig(data.config))
+      .catch(() => {});
+  }, []);
+
+  async function handleConnect(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    const res = await fetch(apiPath("/api/uptime-kuma/connect"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ baseUrl, slug }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Something went wrong");
+      setBusy(false);
+      return;
+    }
+
+    setConfig(data.config);
+    setBusy(false);
+  }
+
+  async function handleDisconnect() {
+    setBusy(true);
+    await fetch(apiPath("/api/uptime-kuma/disconnect"), { method: "POST" });
+    setConfig(null);
+    setBaseUrl("");
+    setSlug("");
+    setBusy(false);
+  }
+
+  return (
+    <>
+      <h2 className="mt-4 text-sm font-semibold">Uptime Kuma</h2>
+
+      {config ? (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="break-all text-xs text-muted">
+            {config.baseUrl}/status/{config.slug}
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleDisconnect}
+            className="w-full rounded-md px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+          >
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleConnect} className="mt-3 flex flex-col gap-2">
+          <input
+            type="url"
+            placeholder="https://uptime.example.com"
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            className="rounded-md bg-foreground/10 px-2 py-1.5 text-sm text-foreground"
+          />
+          <input
+            type="text"
+            placeholder="Status page slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="rounded-md bg-foreground/10 px-2 py-1.5 text-sm text-foreground"
+          />
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy || !baseUrl || !slug}
+            className="rounded-md bg-foreground/10 px-3 py-2 text-sm font-medium transition-colors hover:bg-foreground/20 disabled:opacity-50"
+          >
+            Connect Uptime Kuma
+          </button>
+        </form>
+      )}
+    </>
+  );
+}
+
+function NtfyPanel() {
+  const [subscriptions, setSubscriptions] = useState<NtfySubscription[]>([]);
+  const [serverUrl, setServerUrl] = useState(DEFAULT_NTFY_SERVER);
+  const [topic, setTopic] = useState("");
+  const [token, setToken] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch(apiPath("/api/ntfy/subscriptions"))
+      .then((res) => res.json())
+      .then((data: { subscriptions: NtfySubscription[] }) => setSubscriptions(data.subscriptions))
+      .catch(() => {});
+  }, []);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    const res = await fetch(apiPath("/api/ntfy/subscriptions"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serverUrl, topic, token }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Something went wrong");
+      setBusy(false);
+      return;
+    }
+
+    setSubscriptions((current) => [...current, data.subscription]);
+    setTopic("");
+    setToken("");
+    setBusy(false);
+  }
+
+  async function handleRemove(id: string) {
+    setBusy(true);
+    await fetch(apiPath(`/api/ntfy/subscriptions/${encodeURIComponent(id)}`), { method: "DELETE" });
+    setSubscriptions((current) => current.filter((x) => x.id !== id));
+    setBusy(false);
+  }
+
+  return (
+    <>
+      <h2 className="mt-4 text-sm font-semibold">ntfy</h2>
+
+      {subscriptions.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-1">
+          {subscriptions.map((subscription) => (
+            <li
+              key={subscription.id}
+              className="flex items-center justify-between gap-2 rounded-md bg-foreground/5 px-2 py-1.5"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm">{subscription.topic}</p>
+                <p className="truncate text-xs text-muted">
+                  {subscription.serverUrl}
+                  {subscription.hasToken && " (token)"}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => handleRemove(subscription.id)}
+                aria-label={`Remove ${subscription.topic}`}
+                className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
+              >
+                <X size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form onSubmit={handleAdd} className="mt-3 flex flex-col gap-2">
+        <input
+          type="url"
+          placeholder={DEFAULT_NTFY_SERVER}
+          value={serverUrl}
+          onChange={(e) => setServerUrl(e.target.value)}
+          className="rounded-md bg-foreground/10 px-2 py-1.5 text-sm text-foreground"
+        />
+        <input
+          type="text"
+          placeholder="Topic"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          className="rounded-md bg-foreground/10 px-2 py-1.5 text-sm text-foreground"
+        />
+        <input
+          type="password"
+          placeholder="Access token (optional)"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          autoComplete="off"
+          className="rounded-md bg-foreground/10 px-2 py-1.5 text-sm text-foreground"
+        />
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <button
+          type="submit"
+          disabled={busy || !topic}
+          className="rounded-md bg-foreground/10 px-3 py-2 text-sm font-medium transition-colors hover:bg-foreground/20 disabled:opacity-50"
+        >
+          Add topic
+        </button>
+      </form>
+    </>
   );
 }
 
@@ -250,7 +461,7 @@ export function SettingsMenu() {
       </button>
 
       {open && (
-        <div className="card absolute right-0 top-11 z-10 w-72 shadow-lg">
+        <div className="card absolute right-0 top-11 z-10 max-h-[calc(100vh-4rem)] w-72 overflow-y-auto shadow-lg">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Account</h2>
             {user && (
@@ -327,6 +538,9 @@ export function SettingsMenu() {
                   </button>
                 </div>
               )}
+
+              <UptimeKumaPanel />
+              <NtfyPanel />
             </>
           )}
         </div>

@@ -16,7 +16,7 @@ export async function NewsFeed() {
   }
 
   return (
-    <div className="flex flex-col gap-3 max-w-1/2">
+    <div className="flex flex-col gap-3">
       <h2 className="text-sm text-center font-semibold text-muted">
         News
       </h2>

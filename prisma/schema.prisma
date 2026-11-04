@@ -14,10 +14,13 @@ model User {
   id           String   @id @default(cuid())
   username     String   @unique
   passwordHash String
+  widgetLayout Json?
   createdAt    DateTime @default(now())
 
-  sessions      Session[]
-  trelloAccount TrelloAccount?
+  sessions          Session[]
+  trelloAccount     TrelloAccount?
+  uptimeKumaConfig  UptimeKumaConfig?
+  ntfySubscriptions NtfySubscription[]
 }
 
 model Session {
@@ -39,4 +42,24 @@ model TrelloAccount {
   listId    String?
   listName  String?
   updatedAt DateTime @updatedAt
+}
+
+model UptimeKumaConfig {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseUrl   String
+  slug      String
+  updatedAt DateTime @updatedAt
+}
+
+model NtfySubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serverUrl String
+  topic     String
+  token     String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, serverUrl, topic])
 }

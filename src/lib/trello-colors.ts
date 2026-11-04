@@ -1,12 +1,12 @@
 // Maps Trello's label color names onto this app's --ds-* design
-const COLOR_TOKEN: Record<string, string> = {
-  green: "green",
+export const COLOR_TOKEN: Record<string, string> = {
   yellow: "yellow",
+  green: "green",
   orange: "orange",
   red: "red",
-  purple: "purple",
   blue: "blue",
   sky: "teal",
+  purple: "purple",
   lime: "lime",
   pink: "magenta",
   black: "gray",

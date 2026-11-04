@@ -176,7 +176,7 @@
   --ds-text-subtle: #a9abaf;
 
   --ds-surface: #1f1f21;
-  --ds-surface-raised: #242528;
+  --ds-surface-raised: #28292c;
   --ds-surface-overlay: #2b2c2f;
   --ds-surface-sunken: #18191a;
   --ds-shadow-raised:
@@ -201,6 +201,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Outside edit mode, collapse widgets that rendered nothing (e.g. an unconnected integration) and columns left with none. */
+.widget-layout:not(.is-editing) .widget-slot:has(> .widget-content:empty),
+.widget-layout:not(.is-editing) .widget-column:not(:has(> .widget-slot > .widget-content:not(:empty))) {
+  display: none;
 }
 
 .card {
