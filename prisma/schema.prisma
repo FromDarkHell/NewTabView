@@ -61,5 +61,18 @@ model NtfySubscription {
   token     String?
   createdAt DateTime @default(now())
 
+  // Unix seconds; messages at or before this were cleared with "Clear all".
+  clearedBefore Int?
+  readMessages  NtfyReadMessage[]
+
   @@unique([userId, serverUrl, topic])
+}
+
+model NtfyReadMessage {
+  subscriptionId String
+  subscription   NtfySubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  messageId      String
+  messageTime    Int
+
+  @@id([subscriptionId, messageId])
 }

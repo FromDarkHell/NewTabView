@@ -1,9 +1,39 @@
 import { getSessionUser } from "@/lib/auth";
 import {
+  HEARTBEAT_DISPLAY_COUNT,
   MonitorStatus,
   getStatusPage,
   type UptimeMonitor,
 } from "@/lib/uptime-kuma";
+import { Skeleton, WidgetSkeleton } from "@/components/skeleton";
+
+export function UptimeKumaStatusSkeleton() {
+  return (
+    <WidgetSkeleton label="Uptime Kuma">
+      <ul className="flex flex-wrap gap-2">
+        {Array.from({ length: 4 }, (_, idx) => (
+          <li
+            key={idx}
+            className="card flex shrink grow flex-col gap-2 py-3"
+            style={{ width: "calc(50% - 0.5rem)" }}
+          >
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-2.5 w-2.5 shrink-0 rounded-full" />
+              <Skeleton className="h-4 grow" />
+              <Skeleton className="h-3 w-10" />
+            </div>
+            <div className="flex h-4 gap-0.5">
+              {Array.from({ length: HEARTBEAT_DISPLAY_COUNT }, (_, beatIdx) => (
+                <Skeleton key={beatIdx} className="w-1 grow rounded-sm" />
+              ))}
+            </div>
+            <Skeleton className="h-3 w-12" />
+          </li>
+        ))}
+      </ul>
+    </WidgetSkeleton>
+  );
+}
 
 const STATUS_COLORS: Record<MonitorStatus, string> = {
   [MonitorStatus.DOWN]: "var(--ds-background-accent-red-bolder)",

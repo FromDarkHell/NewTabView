@@ -1,5 +1,28 @@
 import { getTopNews } from "@/lib/news";
 import { NewsItem } from "@/components/news-item";
+import { Skeleton, WidgetSkeleton } from "@/components/skeleton";
+
+export function NewsFeedSkeleton() {
+  return (
+    <WidgetSkeleton label="news">
+      <ul className="flex flex-col gap-3">
+        {Array.from({ length: 4 }, (_, idx) => (
+          <li key={idx} className="card flex gap-3 rounded-lg px-3 py-2">
+            <Skeleton className="h-32 w-32 shrink-0 rounded-md" />
+            <div className="flex grow flex-col justify-between py-1">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+              </div>
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </WidgetSkeleton>
+  );
+}
 
 export async function NewsFeed() {
   let articles;

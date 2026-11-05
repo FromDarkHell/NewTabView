@@ -10,7 +10,8 @@ widget.
 - **Trello**: Connect a Trello account, select a board + select a list, and view the list's cards.
 - **Uptime Kuma**: Point at an [Uptime Kuma](https://github.com/louislam/uptime-kuma) instance's public status page (base URL + slug)
   and view each monitor's current status, recent heartbeats, and 24h uptime.
-- **ntfy**: Subscribe to any number of [ntfy](https://ntfy.sh) topics, and view their recent notifications in one feed.
+- **ntfy**: Subscribe to any number of [ntfy](https://ntfy.sh) topics, and view their recent notifications in one feed. Clear them one at a
+  time or all at once; read state is stored per user in this app, not on the ntfy server.
 - **Layout**: Signed-in users can arrange the widgets below the clock into columns and stack them within a column
   (drag and drop, or the arrow buttons) via the layout button in the header.
 

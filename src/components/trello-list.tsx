@@ -1,6 +1,23 @@
 import { getSessionUser } from "@/lib/auth";
 import { getListCards } from "@/lib/trello";
 import { TrelloCard } from "@/components/trello-card";
+import { Skeleton, WidgetSkeleton } from "@/components/skeleton";
+
+export function TrelloListSkeleton() {
+  return (
+    <WidgetSkeleton label="Trello">
+      <ul className="flex flex-col gap-2">
+        {Array.from({ length: 4 }, (_, idx) => (
+          <li key={idx} className="card flex flex-col gap-2">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-14" />
+          </li>
+        ))}
+      </ul>
+    </WidgetSkeleton>
+  );
+}
 
 export async function TrelloList() {
   const user = await getSessionUser();

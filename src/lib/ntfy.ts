@@ -2,9 +2,15 @@ import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import { isHttpUrl } from "@/lib/url";
 
-const FEED_CACHE_PREFIX = "ntfy:feed:";
-const FEED_CACHE_TTL_SECONDS = 30;
+// The cache holds raw messages; read state is applied on every request so clearing needs no refetch.
+const MESSAGES_CACHE_PREFIX = "ntfy:messages:";
+const MESSAGES_CACHE_TTL_SECONDS = 30;
+const MESSAGES_CACHE_LIMIT = 200;
 const MESSAGE_DISPLAY_COUNT = 20;
+
+// Read markers older than this are pruned. ntfy servers keep messages for 12h by default, so a message
+// this old has normally expired upstream and cannot reappear as unread.
+const READ_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
 export const DEFAULT_NTFY_SERVER = "https://ntfy.sh";
 
@@ -38,6 +44,8 @@ export type NtfySubscriptionSummary = {
 
 export type NtfyMessage = {
   key: string;
+  id: string;
+  subscriptionId: string;
   time: number;
   serverUrl: string;
   topic: string;
@@ -54,6 +62,8 @@ export type NtfyFeed = {
   failedTopics: string[];
   topicCount: number;
 };
+
+type CachedMessages = { messages: NtfyMessage[]; failedTopics: string[] };
 
 // One line of ntfy's JSON stream (https://docs.ntfy.sh/subscribe/api/#json-message-format)
 type NtfyStreamEvent = {
@@ -75,8 +85,8 @@ export function isValidTopic(topic: string): boolean {
   return TOPIC_PATTERN.test(topic);
 }
 
-function feedCacheKey(userId: string): string {
-  return `${FEED_CACHE_PREFIX}${userId}`;
+function messagesCacheKey(userId: string): string {
+  return `${MESSAGES_CACHE_PREFIX}${userId}`;
 }
 
 export async function listSubscriptions(userId: string): Promise<NtfySubscriptionSummary[]> {
@@ -111,7 +121,7 @@ export async function addSubscription(
     data: { userId, ...endpoint },
   });
 
-  await redis.del(feedCacheKey(userId)).catch(() => {});
+  await redis.del(messagesCacheKey(userId)).catch(() => {});
 
   return {
     id: subscription.id,
@@ -123,7 +133,49 @@ export async function addSubscription(
 
 export async function removeSubscription(userId: string, id: string): Promise<void> {
   await prisma.ntfySubscription.deleteMany({ where: { id, userId } });
-  await redis.del(feedCacheKey(userId)).catch(() => {});
+  await redis.del(messagesCacheKey(userId)).catch(() => {});
+}
+
+// Returns false when the subscription does not belong to the user.
+export async function markMessageRead(
+  userId: string,
+  subscriptionId: string,
+  messageId: string,
+  messageTime: number,
+): Promise<boolean> {
+  const subscription = await prisma.ntfySubscription.findFirst({
+    where: { id: subscriptionId, userId },
+    select: { id: true },
+  });
+  if (!subscription) return false;
+
+  await prisma.ntfyReadMessage.upsert({
+    where: { subscriptionId_messageId: { subscriptionId, messageId } },
+    create: { subscriptionId, messageId, messageTime },
+    update: {},
+  });
+
+  await prisma.ntfyReadMessage.deleteMany({
+    where: {
+      subscription: { userId },
+      messageTime: { lt: Math.floor(Date.now() / 1000) - READ_RETENTION_SECONDS },
+    },
+  });
+
+  return true;
+}
+
+export async function clearAllMessages(userId: string, before: number): Promise<void> {
+  // Never move a watermark backwards, e.g. when an older tab clears after a newer one did.
+  await prisma.ntfySubscription.updateMany({
+    where: { userId, OR: [{ clearedBefore: null }, { clearedBefore: { lt: before } }] },
+    data: { clearedBefore: before },
+  });
+
+  // These are now covered by the watermark.
+  await prisma.ntfyReadMessage.deleteMany({
+    where: { subscription: { userId }, messageTime: { lte: before } },
+  });
 }
 
 // Polls the topic's cached messages instead of holding a stream open (https://docs.ntfy.sh/subscribe/api/#poll-for-messages)
@@ -149,16 +201,16 @@ export async function verifyEndpoint(endpoint: NtfyEndpoint): Promise<void> {
   await fetchTopicMessages(endpoint, "1m");
 }
 
-export async function getFeed(userId: string): Promise<NtfyFeed | null> {
-  const subscriptions = await prisma.ntfySubscription.findMany({ where: { userId } });
-  if (subscriptions.length === 0) return null;
-
-  const cacheKey = feedCacheKey(userId);
+async function getCachedMessages(
+  userId: string,
+  subscriptions: { id: string; serverUrl: string; topic: string; token: string | null }[],
+): Promise<CachedMessages> {
+  const cacheKey = messagesCacheKey(userId);
 
   try {
     const cached = await redis.get(cacheKey);
     if (cached) {
-      return JSON.parse(cached) as NtfyFeed;
+      return JSON.parse(cached) as CachedMessages;
     }
   } catch {
     console.warn("Failed to read ntfy cache; falling back to upstream fetch.");
@@ -181,7 +233,9 @@ export async function getFeed(userId: string): Promise<NtfyFeed | null> {
 
     for (const event of result.value) {
       messages.push({
-        key: `${subscription.serverUrl}/${event.id}`,
+        key: `${subscription.id}:${event.id}`,
+        id: event.id,
+        subscriptionId: subscription.id,
         time: event.time,
         serverUrl: subscription.serverUrl,
         topic: event.topic,
@@ -196,15 +250,48 @@ export async function getFeed(userId: string): Promise<NtfyFeed | null> {
     }
   });
 
-  const feed: NtfyFeed = {
-    messages: messages.sort((a, b) => b.time - a.time).slice(0, MESSAGE_DISPLAY_COUNT),
+  const cachedMessages: CachedMessages = {
+    messages: messages.sort((a, b) => b.time - a.time).slice(0, MESSAGES_CACHE_LIMIT),
     failedTopics,
-    topicCount: subscriptions.length,
   };
 
   await redis
-    .set(cacheKey, JSON.stringify(feed), "EX", FEED_CACHE_TTL_SECONDS)
+    .set(cacheKey, JSON.stringify(cachedMessages), "EX", MESSAGES_CACHE_TTL_SECONDS)
     .catch(() => {});
 
-  return feed;
+  return cachedMessages;
+}
+
+export async function getFeed(userId: string): Promise<NtfyFeed | null> {
+  const subscriptions = await prisma.ntfySubscription.findMany({
+    where: { userId },
+    include: { readMessages: { select: { messageId: true } } },
+  });
+  if (subscriptions.length === 0) return null;
+
+  const { messages, failedTopics } = await getCachedMessages(userId, subscriptions);
+
+  const readState = new Map(
+    subscriptions.map((subscription) => [
+      subscription.id,
+      {
+        clearedBefore: subscription.clearedBefore,
+        readIds: new Set(subscription.readMessages.map((x) => x.messageId)),
+      },
+    ]),
+  );
+
+  const unread = messages.filter((message) => {
+    const state = readState.get(message.subscriptionId);
+    // A cached message whose subscription was removed since.
+    if (!state) return false;
+    if (state.clearedBefore !== null && message.time <= state.clearedBefore) return false;
+    return !state.readIds.has(message.id);
+  });
+
+  return {
+    messages: unread.slice(0, MESSAGE_DISPLAY_COUNT),
+    failedTopics,
+    topicCount: subscriptions.length,
+  };
 }

@@ -1,20 +1,23 @@
 import { Suspense } from "react";
 import { Clock } from "@/components/clock";
 import { LayoutEditProvider, LayoutEditToggle } from "@/components/layout-edit";
-import { NewsFeed } from "@/components/news-feed";
-import { NtfyNotifications } from "@/components/ntfy-notifications";
+import { NewsFeed, NewsFeedSkeleton } from "@/components/news-feed";
+import { NtfyNotifications, NtfyNotificationsSkeleton } from "@/components/ntfy-notifications";
 import { SettingsMenu } from "@/components/settings-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { TrelloList } from "@/components/trello-list";
-import { UptimeKumaStatus } from "@/components/uptime-kuma-status";
+import { TrelloList, TrelloListSkeleton } from "@/components/trello-list";
+import { UptimeKumaStatus, UptimeKumaStatusSkeleton } from "@/components/uptime-kuma-status";
 import { WidgetLayout } from "@/components/widget-layout";
 import { getSessionUser } from "@/lib/auth";
-import { getWidgetLayout } from "@/lib/layout";
+import { getConfiguredWidgets, getWidgetLayout } from "@/lib/layout";
 import { resolveWidgetLayout } from "@/lib/widgets";
 
 export default async function Home() {
   const user = await getSessionUser();
-  const widgetLayout = user ? await getWidgetLayout(user.id) : resolveWidgetLayout([]);
+  const [widgetLayout, configured] = await Promise.all([
+    user ? getWidgetLayout(user.id) : resolveWidgetLayout([]),
+    getConfiguredWidgets(user?.id ?? null),
+  ]);
 
   return (
     <LayoutEditProvider>
@@ -30,23 +33,23 @@ export default async function Home() {
           <WidgetLayout
             initialLayout={widgetLayout}
             widgets={{
-              news: (
-                <Suspense fallback={<p className="text-sm text-muted">Loading news</p>}>
+              news: configured.news && (
+                <Suspense fallback={<NewsFeedSkeleton />}>
                   <NewsFeed />
                 </Suspense>
               ),
-              trello: (
-                <Suspense fallback={null}>
+              trello: configured.trello && (
+                <Suspense fallback={<TrelloListSkeleton />}>
                   <TrelloList />
                 </Suspense>
               ),
-              "uptime-kuma": (
-                <Suspense fallback={null}>
+              "uptime-kuma": configured["uptime-kuma"] && (
+                <Suspense fallback={<UptimeKumaStatusSkeleton />}>
                   <UptimeKumaStatus />
                 </Suspense>
               ),
-              ntfy: (
-                <Suspense fallback={null}>
+              ntfy: configured.ntfy && (
+                <Suspense fallback={<NtfyNotificationsSkeleton />}>
                   <NtfyNotifications />
                 </Suspense>
               ),

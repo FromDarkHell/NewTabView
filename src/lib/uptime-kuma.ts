@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 const STATUS_CACHE_PREFIX = "uptime-kuma:status:";
 const STATUS_CACHE_TTL_SECONDS = 60;
-const HEARTBEAT_DISPLAY_COUNT = 30;
+export const HEARTBEAT_DISPLAY_COUNT = 15;
 
 // Mirrors Uptime Kuma's heartbeat status values (src/util.ts: DOWN, UP, PENDING, MAINTENANCE)
 export enum MonitorStatus {
@@ -25,7 +25,11 @@ export type UptimeMonitor = {
   heartbeats: MonitorStatus[];
 };
 
-export type UptimeGroup = { id: number; name: string; monitors: UptimeMonitor[] };
+export type UptimeGroup = {
+  id: number;
+  name: string;
+  monitors: UptimeMonitor[];
+};
 
 export type UptimeStatusPage = {
   title: string;
@@ -51,8 +55,12 @@ type HeartbeatResponse = {
   uptimeList: Record<string, number>;
 };
 
-export async function getConfig(userId: string): Promise<UptimeKumaConfig | null> {
-  const config = await prisma.uptimeKumaConfig.findUnique({ where: { userId } });
+export async function getConfig(
+  userId: string,
+): Promise<UptimeKumaConfig | null> {
+  const config = await prisma.uptimeKumaConfig.findUnique({
+    where: { userId },
+  });
   if (!config) return null;
   return { baseUrl: config.baseUrl, slug: config.slug };
 }
@@ -76,14 +84,18 @@ export async function clearConfig(userId: string): Promise<void> {
 }
 
 async function kumaFetch<T>(baseUrl: string, path: string): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, { signal: AbortSignal.timeout(8000) });
+  const res = await fetch(`${baseUrl}${path}`, {
+    signal: AbortSignal.timeout(8000),
+  });
   if (!res.ok) {
     throw new Error(`Uptime Kuma request failed: ${res.status}`);
   }
   return res.json() as Promise<T>;
 }
 
-export async function fetchStatusPageTitle(config: UptimeKumaConfig): Promise<string> {
+export async function fetchStatusPageTitle(
+  config: UptimeKumaConfig,
+): Promise<string> {
   const page = await kumaFetch<StatusPageResponse>(
     config.baseUrl,
     `/api/status-page/${encodeURIComponent(config.slug)}`,
@@ -91,11 +103,16 @@ export async function fetchStatusPageTitle(config: UptimeKumaConfig): Promise<st
   return page.config.title;
 }
 
-async function fetchStatusPage(config: UptimeKumaConfig): Promise<UptimeStatusPage> {
+async function fetchStatusPage(
+  config: UptimeKumaConfig,
+): Promise<UptimeStatusPage> {
   const slug = encodeURIComponent(config.slug);
   const [page, heartbeats] = await Promise.all([
     kumaFetch<StatusPageResponse>(config.baseUrl, `/api/status-page/${slug}`),
-    kumaFetch<HeartbeatResponse>(config.baseUrl, `/api/status-page/heartbeat/${slug}`),
+    kumaFetch<HeartbeatResponse>(
+      config.baseUrl,
+      `/api/status-page/heartbeat/${slug}`,
+    ),
   ]);
 
   const groups = page.publicGroupList.map((group) => ({
@@ -103,8 +120,8 @@ async function fetchStatusPage(config: UptimeKumaConfig): Promise<UptimeStatusPa
     name: group.name,
     monitors: group.monitorList.map((monitor): UptimeMonitor => {
       // Heartbeat times are "YYYY-MM-DD HH:mm:ss" strings, so a string sort is chronological.
-      const beats = [...(heartbeats.heartbeatList[monitor.id] ?? [])].sort((a, b) =>
-        a.time < b.time ? -1 : a.time > b.time ? 1 : 0,
+      const beats = [...(heartbeats.heartbeatList[monitor.id] ?? [])].sort(
+        (a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0),
       );
       const latest = beats.at(-1);
 
@@ -115,7 +132,9 @@ async function fetchStatusPage(config: UptimeKumaConfig): Promise<UptimeStatusPa
         ping: latest?.ping ?? null,
         message: latest?.msg ?? "",
         uptime24h: heartbeats.uptimeList[`${monitor.id}_24`] ?? null,
-        heartbeats: beats.slice(-HEARTBEAT_DISPLAY_COUNT).map((beat) => beat.status),
+        heartbeats: beats
+          .slice(-HEARTBEAT_DISPLAY_COUNT)
+          .map((beat) => beat.status),
       };
     }),
   }));
@@ -127,7 +146,9 @@ async function fetchStatusPage(config: UptimeKumaConfig): Promise<UptimeStatusPa
   };
 }
 
-export async function getStatusPage(userId: string): Promise<UptimeStatusPage | null> {
+export async function getStatusPage(
+  userId: string,
+): Promise<UptimeStatusPage | null> {
   const config = await getConfig(userId);
   if (!config) return null;
 
@@ -139,7 +160,9 @@ export async function getStatusPage(userId: string): Promise<UptimeStatusPage | 
       return JSON.parse(cached) as UptimeStatusPage;
     }
   } catch {
-    console.warn("Failed to read Uptime Kuma cache; falling back to upstream fetch.");
+    console.warn(
+      "Failed to read Uptime Kuma cache; falling back to upstream fetch.",
+    );
   }
 
   const statusPage = await fetchStatusPage(config);

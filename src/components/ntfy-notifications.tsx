@@ -7,6 +7,32 @@ import {
   type NtfyMessage,
 } from "@/lib/ntfy";
 import { COLOR_TOKEN, labelBackground, labelTextColor } from "@/lib/trello-colors";
+import {
+  NtfyClearAllButton,
+  NtfyClearButton,
+  NtfyDismissible,
+  NtfyReadState,
+} from "@/components/ntfy-read-controls";
+import { Skeleton, WidgetSkeleton } from "@/components/skeleton";
+
+export function NtfyNotificationsSkeleton() {
+  return (
+    <WidgetSkeleton label="notifications">
+      <ul className="flex flex-col gap-2">
+        {Array.from({ length: 3 }, (_, idx) => (
+          <li key={idx} className="card flex flex-col gap-2 py-3">
+            <div className="flex justify-between gap-2 pr-6">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+          </li>
+        ))}
+      </ul>
+    </WidgetSkeleton>
+  );
+}
 
 const PRIORITY_STYLES: Partial<Record<NtfyPriority, { backgroundColor: string; color: string }>> = {
   [NtfyPriority.HIGH]: { backgroundColor: "var(--ds-background-warning-bold)", color: "#1f1f21" },
@@ -40,7 +66,8 @@ function NtfyMessageCard({ message, bShowTopic }: { message: NtfyMessage; bShowT
 
   const content = (
     <>
-      <div className="flex items-baseline justify-between gap-2">
+      {/* Right padding leaves room for the clear button, which sits outside the (possibly linked) card. */}
+      <div className="flex items-baseline justify-between gap-2 pr-6">
         <p className="min-w-0 truncate text-sm font-medium">{message.title ?? message.topic}</p>
         <span className="shrink-0 text-xs text-muted">{formatAge(message.time)}</span>
       </div>
@@ -80,20 +107,30 @@ function NtfyMessageCard({ message, bShowTopic }: { message: NtfyMessage; bShowT
     </>
   );
 
-  if (message.click) {
-    return (
-      <a
-        href={message.click}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="card block py-3 transition-colors hover:opacity-80"
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return <div className="card py-3">{content}</div>;
+  return (
+    <div className="relative">
+      {message.click ? (
+        <a
+          href={message.click}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="card block py-3 transition-colors hover:opacity-80"
+        >
+          {content}
+        </a>
+      ) : (
+        <div className="card py-3">{content}</div>
+      )}
+      <div className="absolute right-2 top-2.5">
+        <NtfyClearButton
+          messageKey={message.key}
+          subscriptionId={message.subscriptionId}
+          messageId={message.id}
+          messageTime={message.time}
+        />
+      </div>
+    </div>
+  );
 }
 
 export async function NtfyNotifications() {
@@ -111,24 +148,38 @@ export async function NtfyNotifications() {
   if (!feed) return null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-sm text-center font-semibold text-muted">Notifications</h2>
+    <NtfyReadState>
+      <div className="flex flex-col gap-3">
+        <div className="relative">
+          <h2 className="text-sm text-center font-semibold text-muted">Notifications</h2>
+          {feed.messages.length > 0 && (
+            <div className="absolute right-0 top-0">
+              <NtfyClearAllButton
+                messageKeys={feed.messages.map((message) => message.key)}
+                before={feed.messages[0].time}
+              />
+            </div>
+          )}
+        </div>
 
-      {feed.failedTopics.length > 0 && (
-        <p className="text-xs text-red-500">Could not load: {feed.failedTopics.join(", ")}</p>
-      )}
+        {feed.failedTopics.length > 0 && (
+          <p className="text-xs text-red-500">Could not load: {feed.failedTopics.join(", ")}</p>
+        )}
 
-      {feed.messages.length === 0 ? (
-        <p className="text-sm text-muted">No recent notifications.</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {feed.messages.map((message) => (
-            <li key={message.key}>
-              <NtfyMessageCard message={message} bShowTopic={feed.topicCount > 1} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+        {feed.messages.length === 0 ? (
+          <p className="text-sm text-muted">No unread notifications.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {feed.messages.map((message) => (
+              <NtfyDismissible key={message.key} messageKey={message.key}>
+                <li>
+                  <NtfyMessageCard message={message} bShowTopic={feed.topicCount > 1} />
+                </li>
+              </NtfyDismissible>
+            ))}
+          </ul>
+        )}
+      </div>
+    </NtfyReadState>
   );
 }
